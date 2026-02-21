@@ -2,6 +2,8 @@
 
 A universal interactive package search TUI.
 
+![screenshot](./screenshot.png)
+
 ## Supported Providers
 
 - **apk** - Alpine Linux
