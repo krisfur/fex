@@ -1,0 +1,13 @@
+FROM fedora:latest
+
+RUN dnf install -y rust cargo sudo && \
+    dnf clean all
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+CMD ["/bin/bash"]

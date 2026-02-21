@@ -1,0 +1,19 @@
+FROM homebrew/brew:latest
+
+# Fix permissions
+RUN chown -R linuxbrew:linuxbrew /home/linuxbrew/.linuxbrew \
+    && chown -R linuxbrew:linuxbrew /home/linuxbrew/.cache 2>/dev/null || true
+
+USER linuxbrew
+
+# Install Rust via brew
+RUN brew install rust
+
+WORKDIR /home/linuxbrew/fex
+COPY --chown=linuxbrew:linuxbrew Cargo.toml Cargo.lock ./
+COPY --chown=linuxbrew:linuxbrew src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /home/linuxbrew/.linuxbrew/bin/fex
+
+CMD ["/bin/bash"]

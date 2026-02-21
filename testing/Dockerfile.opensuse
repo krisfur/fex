@@ -1,0 +1,13 @@
+FROM opensuse/tumbleweed:latest
+
+RUN zypper --non-interactive install rust cargo sudo && \
+    zypper clean --all
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+CMD ["/bin/bash"]

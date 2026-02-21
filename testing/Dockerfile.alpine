@@ -1,0 +1,12 @@
+FROM alpine:latest
+
+RUN apk update && apk add rust cargo build-base sudo
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+CMD ["/bin/sh"]

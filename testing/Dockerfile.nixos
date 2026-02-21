@@ -1,0 +1,17 @@
+FROM nixos/nix:latest
+
+# Enable flakes (optional but useful for future testing)
+RUN mkdir -p /etc/nix && \
+    echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+
+# Install Rust and bash
+RUN nix-env -iA nixpkgs.cargo nixpkgs.rustc nixpkgs.bash
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+CMD ["bash"]

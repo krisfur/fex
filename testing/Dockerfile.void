@@ -1,0 +1,16 @@
+FROM voidlinux/voidlinux:latest
+
+RUN mkdir -p /etc/xbps.d && \
+    echo "repository=https://repo-fastly.voidlinux.org/current" > /etc/xbps.d/00-repository-main.conf && \
+    xbps-install -Syu xbps && \
+    xbps-install -Syu && \
+    xbps-install -y rust cargo sudo
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+CMD ["/bin/sh"]
