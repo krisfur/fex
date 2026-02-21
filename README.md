@@ -10,11 +10,14 @@ A universal interactive package search TUI.
 - **apt** - Debian/Ubuntu
 - **brew** - Homebrew (macOS/Linux)
 - **dnf** - Fedora/RHEL
+- **flatpak** - Flatpak (cross-distro, searches Flathub and other remotes)
 - **nix** - Nix/NixOS
 - **pacman** - Arch Linux (official repos)
 - **paru** - Arch AUR helper (official repos + AUR)
+- **snap** - Snap (cross-distro, searches the Snap Store)
 - **xbps** - Void Linux
 - **yay** - Arch AUR helper (official repos + AUR)
+- **zerobrew** - Zerobrew (Homebrew drop-in)
 - **zypper** - openSUSE
 
 > On some systems the first search may be slow if the package manager cache needs updating.
@@ -77,11 +80,14 @@ Then run a distro container with `fex` already built:
 ./testing/test.sh alpine    # Alpine (apk)
 ./testing/test.sh arch      # Arch Linux (pacman, yay)
 ./testing/test.sh fedora    # Fedora (dnf)
+./testing/test.sh flatpak   # Flatpak with Flathub
 ./testing/test.sh homebrew  # Linuxbrew (brew)
 ./testing/test.sh nixos     # NixOS (nix)
 ./testing/test.sh opensuse  # openSUSE (zypper)
+./testing/test.sh snap      # Snap Store (requires privileged — handled automatically)
 ./testing/test.sh ubuntu    # Ubuntu (apt)
 ./testing/test.sh void      # Void Linux (xbps)
+./testing/test.sh zerobrew  # Zerobrew (brew symlink)
 ```
 
 Podman works as a drop-in replacement — the script detects it automatically.

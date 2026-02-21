@@ -1,0 +1,28 @@
+FROM homebrew/brew:latest
+
+# zerobrew is a Homebrew drop-in: same brew CLI, detected via `zerobrew` binary.
+# We simulate it by symlinking zerobrew → brew so is_available() returns true
+# while all brew commands continue to work normally.
+
+RUN chown -R linuxbrew:linuxbrew /home/linuxbrew/.linuxbrew \
+    && chown -R linuxbrew:linuxbrew /home/linuxbrew/.cache 2>/dev/null || true \
+    && mkdir -p /home/linuxbrew/fex \
+    && chown linuxbrew:linuxbrew /home/linuxbrew/fex
+
+# Create the zerobrew symlink alongside the brew binary
+RUN ln -s /home/linuxbrew/.linuxbrew/bin/brew \
+          /home/linuxbrew/.linuxbrew/bin/zerobrew
+
+USER linuxbrew
+
+# Install Rust via brew
+RUN brew install rust
+
+WORKDIR /home/linuxbrew/fex
+COPY --chown=linuxbrew:linuxbrew Cargo.toml Cargo.lock ./
+COPY --chown=linuxbrew:linuxbrew src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /home/linuxbrew/.linuxbrew/bin/fex
+
+CMD ["/bin/bash"]
