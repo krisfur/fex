@@ -49,6 +49,7 @@ fex                 # Auto-detect best available provider
 fex -p pacman       # Use a specific provider
 fex -l              # List available providers
 fex -h              # Show help
+fex -V              # Show version
 ```
 
 ## Controls
