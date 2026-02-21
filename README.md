@@ -19,9 +19,19 @@ A universal interactive package search TUI.
 
 > On some systems the first search may be slow if the package manager cache needs updating.
 
+## Installation
+
+Install `rust` following official instructions [here](https://rust-lang.org/tools/install/).
+
+Then simply run:
+
+```bash
+cargo install fex
+```
+
 ## Building
 
-Requires only `cargo`:
+With `cargo`:
 
 ```bash
 cargo build --release
@@ -85,3 +95,7 @@ Podman works as a drop-in replacement — the script detects it automatically.
    - `install_command(pkg)` — return the install command string
    - Optionally override `source_color(source)` for colored source badges
 2. Declare the module in `src/providers/mod.rs` and add it to `create_provider()`, `auto_detect_provider()`, and `get_available_providers()`
+
+## Inspiration
+
+Based on my prior work on the C++26 version of this [paclook](https://github.com/krisfur/paclook).
