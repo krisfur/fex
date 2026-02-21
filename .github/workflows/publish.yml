@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
+      - run: cargo publish --allow-dirty --token ${{ secrets.CRATES_TOKEN }}
