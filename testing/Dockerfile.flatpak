@@ -1,0 +1,22 @@
+FROM fedora:latest
+
+# flatpak search queries remote metadata over HTTP — no daemon needed.
+# Flathub remote is added so searches return real results.
+# Note: flatpak install/run won't work without FUSE/bubblewrap privileges,
+# but search and list are fully functional for provider testing.
+
+RUN dnf install -y rust cargo sudo flatpak && \
+    dnf clean all
+
+# Add Flathub remote (system-wide, accessible as root)
+RUN flatpak remote-add --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+CMD ["/bin/bash"]

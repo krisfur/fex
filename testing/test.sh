@@ -49,4 +49,18 @@ echo ""
 echo "Running container (interactive)..."
 echo "Type 'fex' to launch the TUI, Ctrl+X to quit"
 echo ""
-$RUNTIME run -it --rm "fex-$DISTRO"
+
+case "$DISTRO" in
+    snap)
+        # snapd requires systemd as PID 1; run detached then exec in.
+        CONTAINER="fex-snap-$$"
+        $RUNTIME run -d --privileged --name "$CONTAINER" "fex-$DISTRO"
+        echo "Waiting for snapd to start..."
+        sleep 5
+        $RUNTIME exec -it "$CONTAINER" /bin/bash
+        $RUNTIME rm -f "$CONTAINER" 2>/dev/null
+        ;;
+    *)
+        $RUNTIME run -it --rm "fex-$DISTRO"
+        ;;
+esac

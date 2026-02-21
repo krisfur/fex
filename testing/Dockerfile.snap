@@ -1,0 +1,27 @@
+FROM ubuntu:24.04
+
+# snapd requires systemd for socket activation on Ubuntu 24.04.
+# This image uses /sbin/init (systemd) as PID 1.
+# test.sh runs it detached and execs in — see the snap case there.
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y curl build-essential sudo snapd systemd && \
+    systemctl enable snapd.service snapd.socket && \
+    apt-get clean
+
+# Install Rust via rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /fex
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+
+RUN cargo build --release && \
+    cp target/release/fex /usr/local/bin/fex
+
+STOPSIGNAL SIGRTMIN+3
+CMD ["/sbin/init"]
