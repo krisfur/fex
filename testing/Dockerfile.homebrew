@@ -1,8 +1,10 @@
 FROM homebrew/brew:latest
 
-# Fix permissions
+# Fix permissions and pre-create the build directory with correct ownership
 RUN chown -R linuxbrew:linuxbrew /home/linuxbrew/.linuxbrew \
-    && chown -R linuxbrew:linuxbrew /home/linuxbrew/.cache 2>/dev/null || true
+    && chown -R linuxbrew:linuxbrew /home/linuxbrew/.cache 2>/dev/null || true \
+    && mkdir -p /home/linuxbrew/fex \
+    && chown linuxbrew:linuxbrew /home/linuxbrew/fex
 
 USER linuxbrew
 
