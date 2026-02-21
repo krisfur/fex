@@ -1,7 +1,7 @@
 use ratatui::style::Color;
 
 use crate::provider::{Package, Provider, SearchResult};
-use crate::util::{command_exists, escape_query, exec_command};
+use crate::util::{command_exists, escape_query, exec_command, sort_by_relevance};
 
 pub struct XbpsProvider;
 
@@ -71,7 +71,7 @@ impl Provider for XbpsProvider {
             });
         }
 
-        // xbps does not call sort_by_relevance (matches C++ behavior)
+        sort_by_relevance(&mut packages, query);
         SearchResult { packages, error: None }
     }
 
