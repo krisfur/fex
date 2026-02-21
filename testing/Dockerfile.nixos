@@ -4,14 +4,20 @@ FROM nixos/nix:latest
 RUN mkdir -p /etc/nix && \
     echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
 
-# Install Rust and bash
-RUN nix-env -iA nixpkgs.cargo nixpkgs.rustc nixpkgs.bash
+# Install rustup and bash via nix, then pull latest stable Rust.
+# Using rustup instead of nixpkgs.rustc because the pinned nixpkgs Rust
+# version lags behind what our dependencies require.
+RUN nix-env -iA nixpkgs.rustup nixpkgs.bash nixpkgs.gcc
+
+ENV HOME=/root
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN rustup default stable
 
 WORKDIR /fex
 COPY Cargo.toml Cargo.lock ./
 COPY src/ src/
 
-RUN cargo build --release && \
-    cp target/release/fex /usr/local/bin/fex
+RUN cargo install --path .
 
 CMD ["bash"]

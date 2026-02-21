@@ -51,26 +51,19 @@ impl Provider for NixProvider {
             }
 
             // Format: "nixpkgs.name    name-version    Description"
-            let mut parts = line.splitn(3, |c: char| c == ' ' || c == '\t');
-            let attr = match parts.next() {
-                Some(a) if !a.is_empty() => a,
-                _ => continue,
-            };
+            // Columns are space-padded (no tabs), so we can't use splitn on whitespace chars.
+            // Instead, find the boundary of each field manually.
+            let Some(ws1) = line.find(|c: char| c.is_ascii_whitespace()) else { continue };
+            let attr = &line[..ws1];
+            if attr.is_empty() { continue; }
 
-            // Skip whitespace to find name-version
-            let rest_raw = match parts.next() {
-                Some(r) => r,
-                None => continue,
-            };
-            let rest = rest_raw.trim_start();
+            let rest = line[ws1..].trim_start();
+            if rest.is_empty() { continue; }
 
-            // Use full remaining as split on whitespace
-            let mut tokens = rest.split_whitespace();
-            let name_version = match tokens.next() {
-                Some(nv) => nv,
-                None => continue,
+            let (name_version, description) = match rest.find(|c: char| c.is_ascii_whitespace()) {
+                Some(ws2) => (&rest[..ws2], rest[ws2..].trim_start()),
+                None => (rest, ""),
             };
-            let description = tokens.collect::<Vec<_>>().join(" ");
 
             let name = extract_pkg_name(attr);
             if name.is_empty() || name_version.is_empty() {
@@ -81,7 +74,7 @@ impl Provider for NixProvider {
             packages.push(Package {
                 name,
                 version,
-                description,
+                description: description.to_string(),
                 source: "nixpkgs".to_string(),
                 installed: false,
             });
