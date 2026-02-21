@@ -2,6 +2,12 @@
 name = "fex"
 version = "0.1.0"
 edition = "2024"
+description = "A universal interactive package search TUI"
+license = "MIT"
+repository = "https://github.com/krisfur/fex"
+readme = "README.md"
+keywords = ["tui", "package-manager", "search", "cli", "ratatui"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.5.60", features = ["derive"] }
