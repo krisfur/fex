@@ -3,6 +3,7 @@ pub mod apt;
 pub mod brew;
 pub mod dnf;
 pub mod flatpak;
+pub mod homebrew_index;
 pub mod nix;
 pub mod pacman;
 pub mod paru;
@@ -72,5 +73,8 @@ pub fn get_available_providers() -> Vec<(&'static str, BoxedProvider)> {
         ("snap", Box::new(snap::SnapProvider)),
         ("flatpak", Box::new(flatpak::FlatpakProvider)),
     ];
-    candidates.into_iter().filter(|(_, p)| p.is_available()).collect()
+    candidates
+        .into_iter()
+        .filter(|(_, p)| p.is_available())
+        .collect()
 }
