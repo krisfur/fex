@@ -17,7 +17,8 @@ struct HomebrewEntry {
     name: String,
     description: String,
     source: String,
-    search_terms: Vec<String>,
+    primary_terms: Vec<String>,
+    secondary_terms: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -35,9 +36,17 @@ struct FormulaApiEntry {
 struct CaskApiEntry {
     token: String,
     #[serde(default)]
+    name: Vec<String>,
+    #[serde(default)]
     desc: Option<String>,
     #[serde(default)]
     old_tokens: Vec<String>,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+enum MatchTier {
+    Secondary,
+    Primary,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -49,6 +58,7 @@ enum MatchKind {
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct MatchRank {
+    tier: MatchTier,
     kind: MatchKind,
     term_len: usize,
     name_len: usize,
@@ -56,8 +66,9 @@ struct MatchRank {
 
 impl Ord for MatchRank {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.kind
-            .cmp(&other.kind)
+        self.tier
+            .cmp(&other.tier)
+            .then_with(|| self.kind.cmp(&other.kind))
             .then_with(|| other.term_len.cmp(&self.term_len))
             .then_with(|| other.name_len.cmp(&self.name_len))
     }
@@ -66,6 +77,27 @@ impl Ord for MatchRank {
 impl PartialOrd for MatchRank {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl Ord for MatchTier {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.priority().cmp(&other.priority())
+    }
+}
+
+impl PartialOrd for MatchTier {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl MatchTier {
+    fn priority(self) -> u8 {
+        match self {
+            MatchTier::Secondary => 0,
+            MatchTier::Primary => 1,
+        }
     }
 }
 
@@ -87,6 +119,26 @@ impl MatchKind {
             MatchKind::Contains => 0,
             MatchKind::StartsWith => 1,
             MatchKind::Exact => 2,
+        }
+    }
+}
+
+impl MatchRank {
+    fn primary(kind: MatchKind, term_len: usize, name_len: usize) -> Self {
+        Self {
+            tier: MatchTier::Primary,
+            kind,
+            term_len,
+            name_len,
+        }
+    }
+
+    fn secondary(kind: MatchKind, term_len: usize, name_len: usize) -> Self {
+        Self {
+            tier: MatchTier::Secondary,
+            kind,
+            term_len,
+            name_len,
         }
     }
 }
@@ -179,33 +231,43 @@ fn fetch_index() -> Result<Vec<HomebrewEntry>, String> {
             oldnames,
         } = item;
 
-        let search_terms = normalize_terms(
+        let primary_terms = normalize_terms(
             std::iter::once(&name)
                 .chain(aliases.iter())
                 .chain(oldnames.iter()),
         );
+        let secondary_terms = tokenize_text(desc.as_deref().unwrap_or(""));
 
         HomebrewEntry {
             name,
             description: desc.unwrap_or_default(),
             source: "formula".to_string(),
-            search_terms,
+            primary_terms,
+            secondary_terms,
         }
     }));
     entries.extend(casks.into_iter().map(|item| {
         let CaskApiEntry {
             token,
+            name,
             desc,
             old_tokens,
         } = item;
 
-        let search_terms = normalize_terms(std::iter::once(&token).chain(old_tokens.iter()));
+        let primary_terms = normalize_terms(std::iter::once(&token).chain(old_tokens.iter()));
+        let mut secondary_terms = tokenize_texts(name.iter());
+        for term in tokenize_text(desc.as_deref().unwrap_or("")) {
+            if !secondary_terms.contains(&term) {
+                secondary_terms.push(term);
+            }
+        }
 
         HomebrewEntry {
             name: token,
             description: desc.unwrap_or_default(),
             source: "cask".to_string(),
-            search_terms,
+            primary_terms,
+            secondary_terms,
         }
     }));
 
@@ -215,7 +277,7 @@ fn fetch_index() -> Result<Vec<HomebrewEntry>, String> {
 fn normalize_terms<'a>(terms: impl IntoIterator<Item = &'a String>) -> Vec<String> {
     let mut normalized = Vec::new();
     for term in terms {
-        let term = term.to_lowercase();
+        let term = normalize_term(term);
         if !normalized.contains(&term) {
             normalized.push(term);
         }
@@ -223,8 +285,57 @@ fn normalize_terms<'a>(terms: impl IntoIterator<Item = &'a String>) -> Vec<Strin
     normalized
 }
 
+fn tokenize_texts<'a>(texts: impl IntoIterator<Item = &'a String>) -> Vec<String> {
+    let mut terms = Vec::new();
+    for text in texts {
+        for term in tokenize_text(text) {
+            if !terms.contains(&term) {
+                terms.push(term);
+            }
+        }
+    }
+    terms
+}
+
+fn tokenize_text(text: &str) -> Vec<String> {
+    let mut terms = Vec::new();
+    let normalized = normalize_term(text);
+    if normalized.is_empty() {
+        return terms;
+    }
+
+    terms.push(normalized.clone());
+
+    for term in normalized.split_whitespace() {
+        if term.len() < 3 {
+            continue;
+        }
+        let term = term.to_string();
+        if !terms.contains(&term) {
+            terms.push(term);
+        }
+    }
+
+    terms
+}
+
+fn normalize_term(term: &str) -> String {
+    term.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                ' '
+            }
+        })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn search_index(index: &[HomebrewEntry], query: &str, installed: &HashSet<String>) -> Vec<Package> {
-    let query_lower = query.to_lowercase();
+    let query_lower = normalize_term(query);
     let mut matches: Vec<(MatchRank, &HomebrewEntry)> = index
         .iter()
         .filter_map(|entry| best_match(entry, &query_lower).map(|rank| (rank, entry)))
@@ -250,31 +361,54 @@ fn search_index(index: &[HomebrewEntry], query: &str, installed: &HashSet<String
 
 fn best_match(entry: &HomebrewEntry, query: &str) -> Option<MatchRank> {
     entry
-        .search_terms
+        .primary_terms
         .iter()
         .filter_map(|term| {
             if term == query {
-                Some(MatchRank {
-                    kind: MatchKind::Exact,
-                    term_len: term.len(),
-                    name_len: entry.name.len(),
-                })
+                Some(MatchRank::primary(
+                    MatchKind::Exact,
+                    term.len(),
+                    entry.name.len(),
+                ))
             } else if term.starts_with(query) {
-                Some(MatchRank {
-                    kind: MatchKind::StartsWith,
-                    term_len: term.len(),
-                    name_len: entry.name.len(),
-                })
+                Some(MatchRank::primary(
+                    MatchKind::StartsWith,
+                    term.len(),
+                    entry.name.len(),
+                ))
             } else if term.contains(query) {
-                Some(MatchRank {
-                    kind: MatchKind::Contains,
-                    term_len: term.len(),
-                    name_len: entry.name.len(),
-                })
+                Some(MatchRank::primary(
+                    MatchKind::Contains,
+                    term.len(),
+                    entry.name.len(),
+                ))
             } else {
                 None
             }
         })
+        .chain(entry.secondary_terms.iter().filter_map(|term| {
+            if term == query {
+                Some(MatchRank::secondary(
+                    MatchKind::Exact,
+                    term.len(),
+                    entry.name.len(),
+                ))
+            } else if term.starts_with(query) {
+                Some(MatchRank::secondary(
+                    MatchKind::StartsWith,
+                    term.len(),
+                    entry.name.len(),
+                ))
+            } else if term.contains(query) {
+                Some(MatchRank::secondary(
+                    MatchKind::Contains,
+                    term.len(),
+                    entry.name.len(),
+                ))
+            } else {
+                None
+            }
+        }))
         .max()
 }
 

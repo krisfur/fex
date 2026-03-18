@@ -24,13 +24,19 @@ impl Provider for XbpsProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
         let output = exec_command(&format!("xbps-query -Rs '{escaped}' 2>/dev/null"));
         if output.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let mut packages = Vec::new();
@@ -72,7 +78,10 @@ impl Provider for XbpsProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

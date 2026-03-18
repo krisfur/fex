@@ -9,7 +9,11 @@ pub struct ApkProvider;
 
 fn get_installed() -> HashSet<String> {
     let output = exec_command("apk info 2>/dev/null");
-    output.lines().filter(|l| !l.is_empty()).map(|l| l.to_string()).collect()
+    output
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string())
+        .collect()
 }
 
 /// Split "name-version" by the last hyphen followed by a digit.
@@ -36,13 +40,19 @@ impl Provider for ApkProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
         let output = exec_command(&format!("apk search -v '{escaped}' 2>/dev/null"));
         if output.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let installed = get_installed();
@@ -53,7 +63,9 @@ impl Provider for ApkProvider {
                 continue;
             }
             // Format: package-name-version - description
-            let Some(sep) = line.find(" - ") else { continue };
+            let Some(sep) = line.find(" - ") else {
+                continue;
+            };
             let name_version = &line[..sep];
             let description = line[sep + 3..].to_string();
 
@@ -69,7 +81,10 @@ impl Provider for ApkProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

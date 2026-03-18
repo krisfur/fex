@@ -31,13 +31,19 @@ impl Provider for SnapProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
         let output = exec_command(&format!("snap find '{escaped}' 2>/dev/null"));
         if output.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let installed = get_installed();
@@ -56,7 +62,11 @@ impl Provider for SnapProvider {
                 continue;
             }
             let name = cols[0].trim().to_string();
-            let version = if cols.len() > 1 { cols[1].trim().to_string() } else { String::new() };
+            let version = if cols.len() > 1 {
+                cols[1].trim().to_string()
+            } else {
+                String::new()
+            };
             let description = if cols.len() > 4 {
                 cols[4..].join("  ").trim().to_string()
             } else if cols.len() > 3 {
@@ -80,7 +90,10 @@ impl Provider for SnapProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

@@ -9,7 +9,11 @@ pub struct DnfProvider;
 
 fn get_installed() -> HashSet<String> {
     let output = exec_command("rpm -qa --qf '%{NAME}\\n' 2>/dev/null");
-    output.lines().filter(|l| !l.is_empty()).map(|l| l.to_string()).collect()
+    output
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string())
+        .collect()
 }
 
 impl Provider for DnfProvider {
@@ -23,13 +27,19 @@ impl Provider for DnfProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
         let output = exec_command(&format!("dnf search '{escaped}' 2>/dev/null"));
         if output.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let installed = get_installed();
@@ -54,7 +64,9 @@ impl Provider for DnfProvider {
 
             // Format: "name.arch   description"
             let Some(dot) = line.find('.') else { continue };
-            let Some(arch_end) = line.find(' ') else { continue };
+            let Some(arch_end) = line.find(' ') else {
+                continue;
+            };
             if arch_end <= dot {
                 continue;
             }
@@ -78,7 +90,10 @@ impl Provider for DnfProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

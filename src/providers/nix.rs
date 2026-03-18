@@ -34,7 +34,10 @@ impl Provider for NixProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
@@ -53,12 +56,18 @@ impl Provider for NixProvider {
             // Format: "nixpkgs.name    name-version    Description"
             // Columns are space-padded (no tabs), so we can't use splitn on whitespace chars.
             // Instead, find the boundary of each field manually.
-            let Some(ws1) = line.find(|c: char| c.is_ascii_whitespace()) else { continue };
+            let Some(ws1) = line.find(|c: char| c.is_ascii_whitespace()) else {
+                continue;
+            };
             let attr = &line[..ws1];
-            if attr.is_empty() { continue; }
+            if attr.is_empty() {
+                continue;
+            }
 
             let rest = line[ws1..].trim_start();
-            if rest.is_empty() { continue; }
+            if rest.is_empty() {
+                continue;
+            }
 
             let (name_version, description) = match rest.find(|c: char| c.is_ascii_whitespace()) {
                 Some(ws2) => (&rest[..ws2], rest[ws2..].trim_start()),
@@ -81,7 +90,10 @@ impl Provider for NixProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

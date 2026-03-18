@@ -27,11 +27,7 @@ pub fn exec_command(cmd: &str) -> String {
 
 /// Execute a shell command and return (stdout, stderr, exit_code).
 pub fn exec_command_full(cmd: &str) -> (String, String, i32) {
-    match std::process::Command::new("sh")
-        .arg("-c")
-        .arg(cmd)
-        .output()
-    {
+    match std::process::Command::new("sh").arg("-c").arg(cmd).output() {
         Ok(output) => (
             String::from_utf8_lossy(&output.stdout).into_owned(),
             String::from_utf8_lossy(&output.stderr).into_owned(),

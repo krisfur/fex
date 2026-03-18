@@ -66,7 +66,9 @@ fn render_results(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
             let installed_span = if pkg.installed {
                 Span::styled(
                     " *",
-                    Style::new().fg(Color::Green).add_modifier(Modifier::REVERSED),
+                    Style::new()
+                        .fg(Color::Green)
+                        .add_modifier(Modifier::REVERSED),
                 )
             } else {
                 Span::styled("  ", Style::new().add_modifier(Modifier::REVERSED))
@@ -90,7 +92,11 @@ fn render_results(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
                 pkg.source,
                 if pkg.installed { " *" } else { "  " },
                 pkg.name,
-                if pkg.version.is_empty() { String::new() } else { format!(" {}", pkg.version) }
+                if pkg.version.is_empty() {
+                    String::new()
+                } else {
+                    format!(" {}", pkg.version)
+                }
             );
             let pad_len = width.saturating_sub(header_text.len());
             let pad_span = Span::styled(
@@ -111,7 +117,10 @@ fn render_results(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
             let desc = truncate(&pkg.description, max_desc);
             let desc_pad = " ".repeat(width.saturating_sub(9 + desc.len()));
             lines.push(Line::from(vec![
-                Span::styled(format!("{indent}{desc}"), Style::new().add_modifier(Modifier::REVERSED)),
+                Span::styled(
+                    format!("{indent}{desc}"),
+                    Style::new().add_modifier(Modifier::REVERSED),
+                ),
                 Span::styled(desc_pad, Style::new().add_modifier(Modifier::REVERSED)),
             ]));
         } else {
@@ -123,8 +132,10 @@ fn render_results(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
             } else {
                 Span::raw("  ")
             };
-            let name_span =
-                Span::styled(format!(" {}", pkg.name), Style::new().add_modifier(Modifier::BOLD));
+            let name_span = Span::styled(
+                format!(" {}", pkg.name),
+                Style::new().add_modifier(Modifier::BOLD),
+            );
             let version_part = if pkg.version.is_empty() {
                 String::new()
             } else {
@@ -160,9 +171,7 @@ fn render_status(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
         SearchState::Idle => "",
     };
 
-    let status_text = format!(
-        " provider: {provider_name} │ {n} results{search_indicator}"
-    );
+    let status_text = format!(" provider: {provider_name} │ {n} results{search_indicator}");
 
     let style = match app.search_state {
         SearchState::Searching => Style::new().fg(Color::Yellow),
@@ -191,9 +200,7 @@ fn render_status(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
 }
 
 fn render_search(f: &mut Frame, app: &App, area: ratatui::layout::Rect) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(" Search ");
+    let block = Block::default().borders(Borders::ALL).title(" Search ");
 
     let inner = block.inner(area);
     f.render_widget(block, area);
