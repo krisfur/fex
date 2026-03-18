@@ -25,14 +25,16 @@ impl Provider for ZypperProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
 
         // Try exact match via zypper info
-        let info_output =
-            exec_command(&format!("zypper --quiet info '{escaped}' 2>/dev/null"));
+        let info_output = exec_command(&format!("zypper --quiet info '{escaped}' 2>/dev/null"));
         let mut exact_match: Option<Package> = None;
         if !info_output.is_empty() && !info_output.contains("not found") {
             let mut pkg = Package {
@@ -60,10 +62,12 @@ impl Provider for ZypperProvider {
             }
         }
 
-        let output =
-            exec_command(&format!("zypper --quiet search '{escaped}' 2>/dev/null"));
+        let output = exec_command(&format!("zypper --quiet search '{escaped}' 2>/dev/null"));
         if output.is_empty() && exact_match.is_none() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let mut packages = Vec::new();
@@ -116,7 +120,10 @@ impl Provider for ZypperProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

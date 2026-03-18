@@ -1,12 +1,13 @@
+use std::io::Stdout;
 use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
-use std::io::Stdout;
 
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::{Terminal, backend::CrosstermBackend};
 
 use crate::provider::{BoxedProvider, Package, SearchResult};
+use crate::providers::homebrew_index;
 use crate::ui;
 
 pub enum SearchState {
@@ -187,15 +188,13 @@ impl App {
                 self.selected = 0;
                 self.scroll_offset = 0;
                 if let Some(err) = result.error {
-                    self.status_message = format!("Error: {err}");
+                    self.status_message = err;
                 } else if self.packages.is_empty() {
                     self.status_message = "No results found.".to_string();
                 } else {
                     let n = self.packages.len();
-                    self.status_message = format!(
-                        "Found {n} result{}.",
-                        if n == 1 { "" } else { "s" }
-                    );
+                    self.status_message =
+                        format!("Found {n} result{}.", if n == 1 { "" } else { "s" });
                 }
                 self.search_state = SearchState::Done;
             }
@@ -214,7 +213,11 @@ impl App {
             } else {
                 self.generation += 1;
                 self.search_state = SearchState::Searching;
-                self.status_message = "Searching...".to_string();
+                self.status_message = if self.is_loading_homebrew_index() {
+                    "Loading Homebrew index...".to_string()
+                } else {
+                    "Searching...".to_string()
+                };
                 self.spawn_search(query);
             }
             self.query_changed = false;
@@ -229,5 +232,9 @@ impl App {
             let result = provider.search(&query);
             tx.send((search_gen, result)).ok();
         });
+    }
+
+    fn is_loading_homebrew_index(&self) -> bool {
+        matches!(self.provider.name(), "brew" | "zerobrew") && !homebrew_index::is_initialized()
     }
 }

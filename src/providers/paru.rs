@@ -48,10 +48,14 @@ fn parse_ss_output(output: &str) -> Vec<Package> {
             if let Some(pkg) = current.take() {
                 packages.push(pkg);
             }
-            let Some(slash) = line.find('/') else { continue };
+            let Some(slash) = line.find('/') else {
+                continue;
+            };
             let source = line[..slash].to_string();
             let rest = &line[slash + 1..];
-            let Some(space) = rest.find(' ') else { continue };
+            let Some(space) = rest.find(' ') else {
+                continue;
+            };
             let name = rest[..space].to_string();
             let version = rest[space + 1..]
                 .split_whitespace()
@@ -59,7 +63,13 @@ fn parse_ss_output(output: &str) -> Vec<Package> {
                 .unwrap_or("")
                 .to_string();
             let installed = line.contains("[installed]") || line.contains("[Installed]");
-            current = Some(Package { name, version, description: String::new(), source, installed });
+            current = Some(Package {
+                name,
+                version,
+                description: String::new(),
+                source,
+                installed,
+            });
         } else if let Some(ref mut pkg) = current {
             let desc = line.trim_start();
             if !desc.is_empty() {
@@ -84,7 +94,10 @@ impl Provider for ParuProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
@@ -114,14 +127,19 @@ impl Provider for ParuProvider {
         let mut packages = parse_ss_output(&stdout);
 
         if let Some(em) = exact_match {
-            let already = packages.iter().any(|p| p.name == em.name && p.source == em.source);
+            let already = packages
+                .iter()
+                .any(|p| p.name == em.name && p.source == em.source);
             if !already {
                 packages.insert(0, em);
             }
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

@@ -9,7 +9,11 @@ pub struct FlatpakProvider;
 
 fn get_installed() -> HashSet<String> {
     let output = exec_command("flatpak list --columns=application 2>/dev/null");
-    output.lines().filter(|l| !l.is_empty()).map(|l| l.to_string()).collect()
+    output
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string())
+        .collect()
 }
 
 impl Provider for FlatpakProvider {
@@ -23,13 +27,19 @@ impl Provider for FlatpakProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
         let output = exec_command(&format!("flatpak search '{escaped}' 2>/dev/null"));
         if output.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let installed = get_installed();
@@ -51,9 +61,17 @@ impl Provider for FlatpakProvider {
             }
             let description = cols[1].trim().to_string();
             let app_id = cols[2].trim().to_string();
-            let version = if cols.len() > 3 { cols[3].trim().to_string() } else { String::new() };
+            let version = if cols.len() > 3 {
+                cols[3].trim().to_string()
+            } else {
+                String::new()
+            };
             let remote = if cols.len() > 5 {
-                cols[5].split_whitespace().next().unwrap_or("flathub").to_string()
+                cols[5]
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or("flathub")
+                    .to_string()
             } else {
                 "flathub".to_string()
             };
@@ -73,7 +91,10 @@ impl Provider for FlatpakProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {

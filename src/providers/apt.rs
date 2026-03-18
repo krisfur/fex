@@ -9,7 +9,11 @@ pub struct AptProvider;
 
 fn get_installed() -> HashSet<String> {
     let output = exec_command("dpkg-query -W -f='${Package}\\n' 2>/dev/null");
-    output.lines().filter(|l| !l.is_empty()).map(|l| l.to_string()).collect()
+    output
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string())
+        .collect()
 }
 
 impl Provider for AptProvider {
@@ -23,13 +27,19 @@ impl Provider for AptProvider {
 
     fn search(&self, query: &str) -> SearchResult {
         if query.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let escaped = escape_query(query);
         let output = exec_command(&format!("apt-cache search '{escaped}' 2>/dev/null"));
         if output.is_empty() {
-            return SearchResult { packages: vec![], error: None };
+            return SearchResult {
+                packages: vec![],
+                error: None,
+            };
         }
 
         let installed = get_installed();
@@ -40,7 +50,9 @@ impl Provider for AptProvider {
                 continue;
             }
             // Format: package-name - description
-            let Some(sep) = line.find(" - ") else { continue };
+            let Some(sep) = line.find(" - ") else {
+                continue;
+            };
             let name = line[..sep].to_string();
             let description = line[sep + 3..].to_string();
             let is_installed = installed.contains(&name);
@@ -54,7 +66,10 @@ impl Provider for AptProvider {
         }
 
         sort_by_relevance(&mut packages, query);
-        SearchResult { packages, error: None }
+        SearchResult {
+            packages,
+            error: None,
+        }
     }
 
     fn install_command(&self, pkg: &Package) -> String {
