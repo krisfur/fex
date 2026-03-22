@@ -32,6 +32,12 @@ Then simply run:
 cargo install fex
 ```
 
+On macOS with Homebrew, you can also install it from the tap:
+
+```bash
+brew install krisfur/tap/fex
+```
+
 ## Building
 
 With `cargo`:

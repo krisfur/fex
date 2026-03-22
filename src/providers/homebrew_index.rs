@@ -9,6 +9,7 @@ use crate::util::{escape_query, exec_command};
 
 const FORMULA_API_URL: &str = "https://formulae.brew.sh/api/formula.json";
 const CASK_API_URL: &str = "https://formulae.brew.sh/api/cask.json";
+const BREW_NO_AUTO_UPDATE_PREFIX: &str = "HOMEBREW_NO_AUTO_UPDATE=1 ";
 
 static HOMEBREW_INDEX: OnceLock<Result<Vec<HomebrewEntry>, String>> = OnceLock::new();
 
@@ -181,8 +182,12 @@ pub fn search(query: &str) -> SearchResult {
 fn get_installed() -> HashSet<String> {
     let mut installed = HashSet::new();
     for output in [
-        exec_command("brew list --formula 2>/dev/null"),
-        exec_command("brew list --cask 2>/dev/null"),
+        exec_command(&format!(
+            "{BREW_NO_AUTO_UPDATE_PREFIX}brew list --formula 2>/dev/null"
+        )),
+        exec_command(&format!(
+            "{BREW_NO_AUTO_UPDATE_PREFIX}brew list --cask 2>/dev/null"
+        )),
     ] {
         for line in output.lines() {
             if !line.is_empty() {
@@ -414,7 +419,9 @@ fn best_match(entry: &HomebrewEntry, query: &str) -> Option<MatchRank> {
 
 fn cli_search(query: &str, installed: &HashSet<String>) -> SearchResult {
     let escaped = escape_query(query);
-    let output = exec_command(&format!("brew search --desc '{escaped}' 2>/dev/null"));
+    let output = exec_command(&format!(
+        "{BREW_NO_AUTO_UPDATE_PREFIX}brew search --desc '{escaped}' 2>/dev/null"
+    ));
 
     let mut packages = Vec::new();
     let mut current_source = "formula";
